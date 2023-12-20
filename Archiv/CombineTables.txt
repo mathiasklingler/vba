@@ -1,0 +1,136 @@
+Planer:
+- PAGANINI Plan AG
+Adlerweg 2
+7006 Chur
+- Baustudio GmbH
+Schaffhauserstrasse 16
+8302 Kloten
+- Matter+Ammann AG
+
+- Klinova AG 
+Weinbergstrasse 148
+8006 Zürich
+- 3-Plan AG
+Albert- Einstein- Strasse 15, 8404 Winterthur
+
+- Casa-Vita/Frefel Holzbau AG
+Netstalerstrasse 42
+8753 Mollis
+
+
+BKP: 
+- 244.1 Lüftung Keller
+  - 244.1.1 Apparate
+  - 244.1.2 Kanäle Armaturen
+  - 244.1.3 Dämmungen
+- 244.2 Lüftung Wohnen
+  - 244.2.1 Apparate
+  - 244.2.2 Kanäle Armaturen
+  - 244.2.3 Dämmung
+- 244.3 Lüftung Tiefgarage
+  - 244.3.1 Apparate
+  - 244.3.2 Kanäle Armaturen
+  - 244.3.3 Dämmung
+
+BKP Beispiel 2:
+244.02.0 Apparate CHF
+244.02.1 Rohre und Kanäle CHF
+244.02.2 Luftverteilnetz in Decken eingelegt CHF
+244.02.3 Armaturen und Instrumente CHF
+244.02.4 Regulierung CHF
+244.02.5 Isolationen CHF
+244.02.6 Transport und Montage CHF
+244.02.7 Betriebs- und Wartungsanleitungen CHF
+
+
+UseCases .pdf's:
+- Alle Informationen eines Artikel sind in der gleichen Zeile. --> Keine Transforamtion nötig
+- Alle Informationen eines Artikel sind in der gleichen Zeile, aber die Zelle mit dem Artikelname ist leer. --> Transformation 1.
+- Alle Informationen für einen Artikelt sind in unterschiedlichen Zeilen.
+Brainstorming: wie erkenne ich dass ende eines Artikels?
+1. Lese den Artikelname und fülle diese aus.
+2. Wenn das Feld nach dem Artikelnamen leer ist, ist diese Zeile der Start für den Artikel
+3. If word 'xxx' occurs in array 'Artikalstamm' in column B, add the word 'xxx' to the column before and
+one below. Add this word 'xxx' as long until there is a new 'yyy' word in the column B
+
+How to ide
+
+
+
+
+Sub CombineTables()
+    Dim wsA As Worksheet, wsB As Worksheet
+    Dim lastRowA As Long, lastRowB As Long
+    Dim dataRangeA As Range, dataRangeB As Range
+    Dim combinedRange As Range
+    Dim newSheet As Worksheet
+    Dim headersA As Range, headersB As Range
+    Dim headerCellA As Range, headerCellB As Range
+    Dim colIndexA As Long, colIndexB As Long
+    Dim targetRow As Long
+    Dim i As Long, j As Long
+    
+    ' Set references to worksheets
+    Set wsA = ThisWorkbook.Sheets("A")
+    Set wsB = ThisWorkbook.Sheets("B")
+    Set wsC = ThisWorkbook.Sheets("C")
+    
+    ' Find last rows in each sheet
+    lastRowA = wsA.Cells(wsA.Rows.Count, "A").End(xlUp).Row
+    lastRowB = wsB.Cells(wsB.Rows.Count, "A").End(xlUp).Row
+    lastRowC = wsC.Cells(wsC.Rows.Count, "A").End(xlUp).Row
+    
+    ' Define ranges for data in each sheet including headers
+    Set headersA = wsA.Range("A1").Resize(1, wsA.Cells(1, wsA.Columns.Count).End(xlToLeft).Column)
+    Set headersB = wsB.Range("A1").Resize(1, wsB.Cells(1, wsB.Columns.Count).End(xlToLeft).Column)
+    Set headersC = wsC.Range("A1").Resize(1, wsC.Cells(1, wsC.Columns.Count).End(xlToLeft).Column)
+    
+    Set dataRangeB = wsB.Range("A2").Resize(lastRowB - 1, headersB.Columns.Count)
+    Set dataRangeC = wsC.Range("A2").Resize(lastRowC - 1, headersC.Columns.Count)
+    
+    ' Create a new sheet to display the combined data
+    Set newSheet = ThisWorkbook.Sheets.Add(After:=ThisWorkbook.Sheets(ThisWorkbook.Sheets.Count))
+    
+    ' Copy headers from sheet A to new sheet
+    headersA.Copy Destination:=newSheet.Range("A1")
+    
+    ' Match columns from sheet B to columns in sheet A by header names and copy the data
+    For Each headerCellB In headersB
+        For Each headerCellA In headersA
+            If headerCellB.Value = headerCellA.Value Then
+                colIndexA = headerCellA.Column
+                colIndexB = headerCellB.Column
+                
+                ' Find the next available row in the target column
+                targetRow = newSheet.Cells(newSheet.Rows.Count, colIndexA).End(xlUp).Row + 1
+                
+                ' Copy data from sheet B to corresponding column in sheet A
+                wsB.Cells(2, colIndexB).Resize(lastRowB - 1).Copy Destination:=newSheet.Cells(targetRow, colIndexA)
+                
+                Exit For
+            End If
+        Next headerCellA
+    Next headerCellB
+    
+    ' Match columns from sheet C to columns in sheet A by header names and copy the data
+    For Each headerCellC In headersC
+        For Each headerCellA In headersA
+            If headerCellC.Value = headerCellA.Value Then
+                colIndexA = headerCellA.Column
+                colIndexC = headerCellC.Column
+                
+                ' Find the next available row in the target column
+                targetRow = newSheet.Cells(newSheet.Rows.Count, colIndexA).End(xlUp).Row + 1
+                
+                ' Copy data from sheet C to corresponding column in sheet A
+                wsC.Cells(2, colIndexC).Resize(lastRowC - 1).Copy Destination:=newSheet.Cells(targetRow, colIndexA)
+                
+                Exit For
+            End If
+        Next headerCellA
+    Next headerCellC
+    
+    ' Autofit columns in the new sheet
+    newSheet.Cells.EntireColumn.AutoFit
+End Sub
+
